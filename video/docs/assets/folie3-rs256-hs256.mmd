@@ -1,0 +1,13 @@
+flowchart TB
+  subgraph RS["RS256 — asymmetrisch"]
+    direction LR
+    P1["Privater Schlüssel<br/>nur der Server"] -->|signiert| T1["Token"]
+    T1 -->|verifiziert| P2["Öffentlicher Schlüssel<br/>darf jeder kennen"]
+  end
+  subgraph HS["HS256 — symmetrisch"]
+    direction LR
+    S["Ein gemeinsames<br/>Geheimnis"] -->|"signiert UND verifiziert"| T2["Token"]
+  end
+  RS ~~~ HS
+  style P2 fill:#e8f5e9,stroke:#2e7d32,color:#000
+  style S fill:#fdecea,stroke:#c62828,color:#000

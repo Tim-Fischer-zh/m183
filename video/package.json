@@ -1,0 +1,16 @@
+{
+  "name": "owasp-a07-jwt-confusion-portal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OWASP A07:2025 — verwundbares Mitarbeiter-Portal (JWT Algorithm Confusion, CVE-2022-23541)",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "jsonwebtoken": "8.5.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
