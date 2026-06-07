@@ -9,25 +9,48 @@ namespace Crypto.Core;
 /// </summary>
 public sealed class Sha256 : IHashFunction
 {
+    /*
+     * byte   // 8 Bit, 0..255
+     * uint   // 32 Bit, 0..2^32-1   
+     * ulong  // 64 Bit              
+     */
     public int HashSizeInBytes => 32;
 
     public byte[] Hash(ReadOnlySpan<byte> data)
     {
-        byte[] message = data.ToArray();
-        var block = new List<byte>(message);
-        block.Add(0x80);
         
-        for(int i = block.ToArray().Length; i <56; i++)
+        Pad(data.ToArray());        
+        
+        return data.ToArray();
+    }
+
+    private static byte[] Pad(ReadOnlySpan<byte> data)
+    {
+        byte[] message = data.ToArray(); //copy in message
+        List<byte> block = new List<byte>(message); // mutable liste 
+        ulong bitLen = (ulong)data.Length * 8; // erhaltene data länge, bei abc=24
+        
+        
+        block.Add(0x80); // ende der nachricht das hinzufügen also "abc" + 0x80 .....
+        
+        
+        for(int i = block.Count; i <56; i++) // bis index 56 mit 0 auffüllen
         {
             block.Add(0x00);
         }
-
-        byte[] padded = block.ToArray();
         
-        for(int i = 0; i < padded.Length; i++)
+        byte[] padded = block.ToArray(); // 97 98 99 0 0 0 0 0 0 0 0 0...
+        Console.WriteLine("data: " + data.Length +" " + "padded: " + padded.Length); //3
+        
+        
+        for (int i = 56; i >= 0; i = i - 8) // da ulong 56 - 0 shiften kann, startet i bei 56 und added von Bitlen via BigEndian zum block   
         {
-            Console.WriteLine(padded[i].ToString());
+            block.Add((byte)(bitLen >> i)); // 0000_0010 << 1 = 0000_0100 (null kommt dazu) hier shiften wir aber mit 8er damit es den nächsten byte nimmt
         }
-        return data.ToArray();
+        // for(int i = 0; i < block.Count; i++)
+        // {
+        //     Console.WriteLine(block[i].ToString());
+        // }
+        return block.ToArray();
     }
 }
