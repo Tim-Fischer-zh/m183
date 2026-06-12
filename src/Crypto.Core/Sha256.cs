@@ -1,3 +1,5 @@
+using System;
+
 namespace Crypto.Core;
 
 /// <summary>
@@ -51,6 +53,21 @@ public sealed class Sha256 : IHashFunction
         // {
         //     Console.WriteLine(block[i].ToString());
         // }
+        var h = (decimal)0x12345678;
+        Console.WriteLine("h: " + h);
+        var u = (decimal)RotR(0x12345678, 8);
+        Console.WriteLine("u: " + u);
         return block.ToArray();
     }
+
+    private static uint RotR(uint x, int n)
+    {
+        return (x >> n) | (x << (32 - n));
+    }
+
+    private static ulong Ch(uint e, int f, int g)
+    {
+        
+    
+    
 }
