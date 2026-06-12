@@ -20,7 +20,6 @@ public sealed class Sha256 : IHashFunction
 
     public byte[] Hash(ReadOnlySpan<byte> data)
     {
-        
         Pad(data.ToArray());        
         
         return data.ToArray();
@@ -32,31 +31,21 @@ public sealed class Sha256 : IHashFunction
         List<byte> block = new List<byte>(message); // mutable liste 
         ulong bitLen = (ulong)data.Length * 8; // erhaltene data länge, bei abc=24
         
-        
         block.Add(0x80); // ende der nachricht das hinzufügen also "abc" + 0x80 .....
-        
         
         for(int i = block.Count; i <56; i++) // bis index 56 mit 0 auffüllen
         {
             block.Add(0x00);
         }
         
-        byte[] padded = block.ToArray(); // 97 98 99 0 0 0 0 0 0 0 0 0...
-        Console.WriteLine("data: " + data.Length +" " + "padded: " + padded.Length); //3
-        
+        // byte[] padded = block.ToArray(); // 97 98 99 0 0 0 0 0 0 0 0 0...
+        // Console.WriteLine("data: " + data.Length +" " + "padded: " + padded.Length); //3
         
         for (int i = 56; i >= 0; i = i - 8) // da ulong 56 - 0 shiften kann, startet i bei 56 und added von Bitlen via BigEndian zum block   
         {
             block.Add((byte)(bitLen >> i)); // 0000_0010 << 1 = 0000_0100 (null kommt dazu) hier shiften wir aber mit 8er damit es den nächsten byte nimmt
         }
-        // for(int i = 0; i < block.Count; i++)
-        // {
-        //     Console.WriteLine(block[i].ToString());
-        // }
-        var h = (decimal)0x12345678;
-        Console.WriteLine("h: " + h);
-        var u = (decimal)RotR(0x12345678, 8);
-        Console.WriteLine("u: " + u);
+        
         return block.ToArray();
     }
 
@@ -65,9 +54,34 @@ public sealed class Sha256 : IHashFunction
         return (x >> n) | (x << (32 - n));
     }
 
-    private static ulong Ch(uint e, int f, int g)
+    private static uint Ch(uint e, uint f, uint g)
     {
-        
-    
+        return (e & f) ^ (~e & g);
+    }
+
+    private static uint Maj(uint a, uint b, uint c)
+    {
+        return (a & b) ^ (a & c) ^ (b & c);
+    }
+
+    private static uint BigSigma0(uint x)
+    {
+        return RotR(x, 2) ^ RotR(x, 13) ^ RotR(x, 22);
+    }
+
+    private static uint BigSigma1(uint x)
+    {
+        return RotR(x, 6) ^ RotR(x, 11) ^ RotR(x, 25);
+    }
+
+    private static uint SmallSigma0(uint x)
+    {
+        return RotR(x, 7) ^ RotR(x, 18) ^ (x >> 3);
+    }
+
+    private static uint SmallSigma1(uint x)
+    {
+        return RotR(x, 17) ^ RotR(x, 19) ^ (x >> 10);
+    }
     
 }
