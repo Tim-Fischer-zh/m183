@@ -36,4 +36,14 @@ public class Sha256Tests
             Assert.Equal(SHA256.HashData(data), sut.Hash(data));
         }
     }
+    
+    // [Fact]
+    // public void Hash_MatchesDotNet_ForRandomOutputs()
+    // {
+    //     var sut = new Sha256();
+    //     var rng = new Random(5783920);
+    //     byte[] data = sut.Hash(new byte[rng.Next(0, 200)]);
+    //     Assert.Equal(SHA256.HashData(data), sut.Hash(data));
+    //
+    // }
 }

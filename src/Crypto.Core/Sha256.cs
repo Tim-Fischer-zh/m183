@@ -42,26 +42,34 @@ public sealed class Sha256 : IHashFunction
     public byte[] Hash(ReadOnlySpan<byte> data)
     {
         Pad(data.ToArray());        
-        byte[] padded = Pad(data.ToArray());
-        uint[] W = B2(B1(padded));
-        
+        byte[] padded = Pad(data);
         uint[] hash = (uint[])H0.Clone();
-        uint a=hash[0], b=hash[1], c=hash[2], d=hash[3],
-            e=hash[4], f=hash[5], g=hash[6], h=hash[7];
         
-        for (int t = 0; t < 64; t++)
-        {
-            uint T1 = h + BigSigma1(e) + Ch(e,f,g) + K[t] + W[t];
-            uint T2 = BigSigma0(a) + Maj(a,b,c);
+        // Hashing Motor
+        for (int off = 0; off < padded.Length; off += 64)
+        { 
+            uint[] W = B2(B1(padded.AsSpan(off, 64))); //span wegen readonly 
+            uint a=hash[0], b=hash[1], c=hash[2], d=hash[3],
+                e=hash[4], f=hash[5], g=hash[6], h=hash[7];
+            
+            for (int t = 0; t < 64; t++)
+            {   
+                // T1 und T2 temporäre Variabeln
+                uint T1 = h + BigSigma1(e) + Ch(e,f,g) + K[t] + W[t]; 
+                uint T2 = BigSigma0(a) + Maj(a,b,c);
 
-            h = g;  g = f;  f = e;  e = d + T1;
-            d = c;  c = b;  b = a;  a = T1 + T2;
+                h = g;  g = f;  f = e;  e = d + T1; //T1 wird in der MITTE und 
+                d = c;  c = b;  b = a;  a = T1 + T2; // am start eingefügt 
+            }
+            //compute zurück adden
+            hash[0]+=a; hash[1]+=b; hash[2]+=c; hash[3]+=d;
+            hash[4]+=e; hash[5]+=f; hash[6]+=g; hash[7]+=h;
+            
         }
         
-        hash[0]+=a; hash[1]+=b; hash[2]+=c; hash[3]+=d;
-        hash[4]+=e; hash[5]+=f; hash[6]+=g; hash[7]+=h;
+        
         byte[] result = new byte[32];
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 8; i++) // aus vorheriger Schleife die hashes in bigendian in result array hinzufügen
         {
             result[4*i]     = (byte)(hash[i] >> 24);   // höchstwertiges Byte zuerst
             result[4*i + 1] = (byte)(hash[i] >> 16);
@@ -80,7 +88,13 @@ public sealed class Sha256 : IHashFunction
         
         block.Add(0x80); // Ende der nachricht das hinzufügen also "abc" + 0x80 .....
         
-        for(int i = block.Count; i <56; i++) // bis index 56 mit 0 auffüllen
+        // BUG: das geht nur solange Nachricht plus 0x80 unter 56 bleibt.
+        // for(int i = block.Count; i <56; i++) // bis index 56 mit 0 auffüllen
+        // {
+        //     block.Add(0x00);
+        // }
+        
+        while (block.Count % 64 != 56)
         {
             block.Add(0x00);
         }
@@ -148,13 +162,13 @@ public sealed class Sha256 : IHashFunction
         return RotR(x, 17) ^ RotR(x, 19) ^ (x >> 10);
     }
 
-    private static uint[] B1(byte[] data)
+    private static uint[] B1(ReadOnlySpan<byte> block) // readonly span wegen 64 block 
     {
         uint[] W = new uint[64];
         for (int i = 0; i < 16; i++)
         {
-            W[i] = (uint)data[4 * i] << 24 | (uint)data[4 * i + 1] << 16 | (uint)data[4 * i + 2] << 8 |
-                   (uint)data[4 * i + 3];
+            W[i] = (uint)block[4 * i] << 24 | (uint)block[4 * i + 1] << 16 | (uint)block[4 * i + 2] << 8 |
+                   (uint)block[4 * i + 3];
         }
 
         return W;
