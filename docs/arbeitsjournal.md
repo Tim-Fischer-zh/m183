@@ -33,3 +33,25 @@ Zum Schluss die Konstanten reingenommen. Die acht Startwerte und die 64 Rundenko
 Am Message Schedule. Den 64-Byte-Block in 16 uint-Wörter zerlegen, big-endian. Danach auf 64 Wörter erweitern mit den kleinen Sigmas.
 
 Als Nächstes kommen die 64-Runden-Kompression und der Output. Dann sollte der erste Testvektor grün werden.
+
+## 19. Juni 2026
+
+SHA-256 fertig gemacht und HMAC dazu. Langer Tag.
+
+Zuerst den Message Schedule fertig. Den Block in 16 Wörter zerlegen, dann auf 64 erweitern. Als zwei Methoden, B1 und B2.
+
+Dann die Kompression. 64 Runden mit T1 und T2. Ich habe gebraucht, bis ich verstanden habe, dass die acht Variablen wie ein Schieberegister laufen. T1 und T2 sind nur zwei Zwischenwerte, die oben und in der Mitte neu reinkommen.
+
+Den Output gebaut. Die acht Wörter als 32 Bytes big-endian.
+
+Dann ein fieser Bug. Meine Pad-Methode hat sich selbst aufgerufen, Endlosschleife. Der ganze Hash-Code war aus Versehen in Pad gelandet. Aufgeräumt, jetzt paddet Pad nur und Hash macht den Rest.
+
+Danach waren leere Eingabe und "abc" grün. Lange Eingaben noch nicht, da fehlte Multi-Block. Das Padding auf ein Vielfaches von 64 verallgemeinert und Hash über alle Blöcke laufen lassen. Alle vier SHA-256 Tests grün.
+
+Dann HMAC angefangen. Im Kern ist das nur zweimal SHA-256, mit dem Schlüssel reingemischt. Schlüssel auf 64 Byte bringen, mit ipad und opad XOR-en, innen und aussen hashen.
+
+Beim Aneinanderhängen habe ich Union erwischt statt Concat. Union wirft Duplikate weg, das gibt Müll. Mit Concat lief es.
+
+Beim Testen den Schlüssel als Text statt als Bytes eingegeben und mich kurz gewundert, warum der Wert nicht passt. Mit den richtigen Byte-Arrays stimmen alle RFC-Vektoren.
+
+Zum Schluss Verify mit dem constant-time Vergleich. HMAC ist durch.
