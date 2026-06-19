@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Security.Cryptography;
 
 namespace Crypto.Core;
 
@@ -41,8 +42,34 @@ public sealed class Sha256 : IHashFunction
     public byte[] Hash(ReadOnlySpan<byte> data)
     {
         Pad(data.ToArray());        
+        byte[] padded = Pad(data.ToArray());
+        uint[] W = B2(B1(padded));
         
-        return data.ToArray();
+        uint[] hash = (uint[])H0.Clone();
+        uint a=hash[0], b=hash[1], c=hash[2], d=hash[3],
+            e=hash[4], f=hash[5], g=hash[6], h=hash[7];
+        
+        for (int t = 0; t < 64; t++)
+        {
+            uint T1 = h + BigSigma1(e) + Ch(e,f,g) + K[t] + W[t];
+            uint T2 = BigSigma0(a) + Maj(a,b,c);
+
+            h = g;  g = f;  f = e;  e = d + T1;
+            d = c;  c = b;  b = a;  a = T1 + T2;
+        }
+        
+        hash[0]+=a; hash[1]+=b; hash[2]+=c; hash[3]+=d;
+        hash[4]+=e; hash[5]+=f; hash[6]+=g; hash[7]+=h;
+        byte[] result = new byte[32];
+        for (int i = 0; i < 8; i++)
+        {
+            result[4*i]     = (byte)(hash[i] >> 24);   // höchstwertiges Byte zuerst
+            result[4*i + 1] = (byte)(hash[i] >> 16);
+            result[4*i + 2] = (byte)(hash[i] >> 8);
+            result[4*i + 3] = (byte)(hash[i]);
+        }
+
+        return result;
     }
 
     private static byte[] Pad(ReadOnlySpan<byte> data)
@@ -65,7 +92,6 @@ public sealed class Sha256 : IHashFunction
         {
             block.Add((byte)(bitLen >> i)); // 0000_0010 << 1 = 0000_0100 (null kommt dazu) hier shiften wir aber mit 8er damit es den nächsten byte nimmt
         }
-        
         return block.ToArray();
     }
 
@@ -121,5 +147,29 @@ public sealed class Sha256 : IHashFunction
     {
         return RotR(x, 17) ^ RotR(x, 19) ^ (x >> 10);
     }
+
+    private static uint[] B1(byte[] data)
+    {
+        uint[] W = new uint[64];
+        for (int i = 0; i < 16; i++)
+        {
+            W[i] = (uint)data[4 * i] << 24 | (uint)data[4 * i + 1] << 16 | (uint)data[4 * i + 2] << 8 |
+                   (uint)data[4 * i + 3];
+        }
+
+        return W;
+    }
+
+    private static uint[] B2(uint[] W)
+    {
+        for (int t = 16; t < 64; t++)
+        {
+            W[t] = SmallSigma1(W[t-2]) + W[t-7] + SmallSigma0(W[t-15]) + W[t-16];
+        }
+
+        return W;
+    }
+
+
     
 }
