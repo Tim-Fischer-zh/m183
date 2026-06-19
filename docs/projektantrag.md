@@ -1,5 +1,7 @@
 # Projektantrag M183 — Eigene Krypto-Library (statt Kompetenznachweise)
 
+[Projekt-Board (offene Issues)](https://github.com/users/Tim-Fischer-zh/projects/9)
+
 **Modul:** 183 — Applikationssicherheit implementieren
 **Antragsteller:** Tim Fischer
 **Datum:** 2026-06-05
