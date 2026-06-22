@@ -55,3 +55,17 @@ Beim Aneinanderhängen habe ich Union erwischt statt Concat. Union wirft Duplika
 Beim Testen den Schlüssel als Text statt als Bytes eingegeben und mich kurz gewundert, warum der Wert nicht passt. Mit den richtigen Byte-Arrays stimmen alle RFC-Vektoren.
 
 Zum Schluss Verify mit dem constant-time Vergleich. HMAC ist durch.
+
+## 22. Juni 2026
+
+Die Interfaces aufgeräumt und committet. Dann PBKDF2 angefangen.
+
+PBKDF2 baut auf HMAC auf. Es ruft HMAC in einer Kette auf und macht das absichtlich oft, damit Passwörter langsam zu knacken sind. Das Passwort ist immer der Schlüssel, der Salt plus ein Blockindex die erste Nachricht.
+
+Zuerst den Blockindex als 4 Byte big-endian an den Salt gehängt. Dann die U-Kette gebaut und alle U zusammen ge-XOR-t. Ich hatte zuerst Passwort und Nachricht im HMAC vertauscht und die Schleife falsch gestartet. Nach dem Fix lief es.
+
+Beim Testen kam jedes Mal ein anderer Wert raus. Kurz erschrocken, aber das war richtig so. Hash erzeugt jedes Mal einen neuen zufälligen Salt. Zum Prüfen gegen die Testvektoren braucht es einen festen Salt über die innere Methode.
+
+Mit festem Salt stimmt der erste Testvektor. Die innere Methode ist gerade noch public zum Testen, das mache ich später wieder private.
+
+Als Nächstes Multi-Block, dann Hash und Verify fertig machen.
