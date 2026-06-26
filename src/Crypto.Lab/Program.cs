@@ -41,7 +41,7 @@ class Program
     {
         var sut = new Pbkdf2();
         byte[] salt = System.Text.Encoding.ASCII.GetBytes("salt");
-        byte[] dk = sut.Do("password", salt, 4096, 32, 1);
-        Console.WriteLine(Convert.ToHexString(dk).ToLowerInvariant());
+        string result = sut.Hash("password");
+        Console.WriteLine(result);
     }
 }

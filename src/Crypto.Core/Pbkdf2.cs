@@ -7,7 +7,7 @@ public sealed class Pbkdf2 : IPasswordHasher
 {
     private readonly IMac _mac= new HmacSha256();
 
-    public byte[] Do(string password, byte[] salt, uint iterations, int dkLen, uint index)
+    private byte[] Do(string password, byte[] salt, uint iterations, int dkLen, uint index)
     {
         byte[] bytePassword = Encoding.UTF8.GetBytes(password);
         // Salt || 00 00 00 01.
@@ -43,14 +43,28 @@ public sealed class Pbkdf2 : IPasswordHasher
     {
         // Random Number Generator mache ich nicht von Hand.
         byte[] salt = RandomNumberGenerator.GetBytes(16);
-        uint iterations = 1;
+        uint iterations = 60000;
         int dkLen = 32;
-        return BitConverter.ToString(Do("password", salt, 1, 32, 1));
+        var hash = Do(password, salt, iterations, dkLen, 1);
+        return $"pbkdf2-sha256${iterations}${Convert.ToBase64String(salt)}${Convert.ToBase64String(hash)}";
     }
 
     public bool Verify(string password, string storedHash)
     {
-        return true;
+        string[] parts = storedHash.Split('$');
+        uint iterations = uint.Parse(parts[1]);
+        byte[] salt = Convert.FromBase64String(parts[2]);
+        byte[] hash = Convert.FromBase64String(parts[3]);
+        var hashToVerify = Do(password, salt, iterations, 32, 1);
+        
+        
+        if (hashToVerify.Length != hash.Length) return false;
+
+        int diff = 0;
+        for (int i = 0; i < hash.Length; i++)
+            diff |= hashToVerify[i] ^ hash[i];
+
+        return diff == 0;
     }
     
 }
