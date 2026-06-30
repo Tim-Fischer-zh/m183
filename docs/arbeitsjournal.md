@@ -69,3 +69,31 @@ Beim Testen kam jedes Mal ein anderer Wert raus. Kurz erschrocken, aber das war 
 Mit festem Salt stimmt der erste Testvektor. Die innere Methode ist gerade noch public zum Testen, das mache ich später wieder private.
 
 Als Nächstes Multi-Block, dann Hash und Verify fertig machen.
+
+## 26. Juni 2026
+
+PBKDF2 fertig gemacht.
+
+Verify gebaut: den gespeicherten String zerlegen, mit demselben Salt und derselben Iterationszahl neu rechnen, dann vergleichen. Zuerst hatte ich `SequenceEqual` genommen. Das ist aber nicht constant-time, es bricht beim ersten unterschiedlichen Byte ab und verrät damit über die Laufzeit etwas. Auf den diff-Vergleich umgestellt, denselben wie bei HMAC.
+
+Multi-Block für längere Ausgaben habe ich weggelassen. Der Passwort-Hash braucht nur einen Block, und der Quervergleich gegen die .NET-Referenz beweist die Korrektheit schon.
+
+Alle Tests grün. PBKDF2 ist durch.
+
+## 30. Juni 2026
+
+AES-256, der grösste Brocken. Der hat mit Abstand am meisten Teile.
+
+Angefangen mit xtime, der Multiplikation mit 2 im Galois-Feld. Ein Linksshift, und wenn oben ein Bit rausfällt, XOR mit 0x1b. Den 0x80-Fall als Test, da greift die Reduktion.
+
+S-Box und Rcon als Konstanten reingenommen, beide verifiziert.
+
+Dann die vier Operationen. SubBytes ersetzt jedes Byte über die S-Box. ShiftRows rotiert die Zeilen nach links. MixColumns ist die GF-Rechnung mit xtime. AddRoundKey ist nur ein XOR mit dem Rundenschlüssel. Ein paar Tippfehler unterwegs: bei MixColumns `XTime(a1)` statt `XTime(a2)`, bei ShiftRows hatte ich temp als einzelnes Byte statt als ganze Zeile.
+
+Die Schlüsselexpansion war am kniffligsten. Aus 32 Byte werden 60 Wörter. Ich hatte die Bedingung `i % 4 == i` statt `i % 8 == 4` geschrieben, die nie wahr wird, und das Wort-XOR im falschen Zweig statt für jedes Wort.
+
+EncryptBlock setzt alles zusammen. State spaltenweise laden, AddRoundKey, dann 13 volle Runden, die letzte ohne MixColumns, dann ausgeben.
+
+Der FIPS-Testvektor stimmt, und der Quervergleich gegen die .NET-AES mit 100 Zufallsblöcken auch. AES ist durch.
+
+Als Nächstes ChaCha20, der zweite Verschlüsseler.

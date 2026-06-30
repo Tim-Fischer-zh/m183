@@ -117,6 +117,15 @@ public class Aes256
         }
     }
 
+    private static byte[] SubWord(byte[] w)
+    {
+        return [Sbox[w[0]], Sbox[w[1]], Sbox[w[2]], Sbox[w[3]]];
+    }
+    private static byte[] RotWord(byte[] w)
+    {
+        return [w[1], w[2], w[3], w[0]];
+    }
+
     private static byte[][] KeyExpansion(byte[] key)
     {
         byte[][] w = new byte[60][];
@@ -124,5 +133,59 @@ public class Aes256
         {
             w[i] = new byte[] {key[4*i], key[4*i+1], key[4*i+2], key[4*i+3]};
         }
+
+        for (int i = 8; i < 60; i++)
+        {
+            byte[] temp = w[i - 1];
+
+            if (i % 8 == 0)
+            {
+                temp = SubWord(RotWord(temp));
+                temp[0] ^= Rcon[i / 8 - 1];
+            }
+            else if (i % 8 == 4)
+            {
+                temp = SubWord(temp);
+            }
+
+            byte[] next = new byte[4];
+            for (int k = 0; k < 4; k++)
+                next[k] = (byte)(w[i - 8][k] ^ temp[k]);
+            w[i] = next;
+        }
+        return w;
+    }
+    
+    public static byte[] EncryptBlock(byte[] input, byte[] key)
+    {
+        byte[][] schedule = KeyExpansion(key);
+
+        // State spaltenweise laden: state[zeile, spalte] = input[4*spalte + zeile]
+        byte[,] state = new byte[4, 4];
+        for (int c = 0; c < 4; c++)
+        for (int r = 0; r < 4; r++)
+            state[r, c] = input[4 * c + r];
+
+        AddRoundKey(state, schedule, 0); // Runde 0
+
+        for (int round = 1; round <= 13; round++) // Runden 1 bis 13
+        {
+            SubBytes(state);
+            ShiftRows(state);
+            MixColumns(state);
+            AddRoundKey(state, schedule, round);
+        }
+
+        SubBytes(state); // letzte Runde (14)
+        ShiftRows(state);
+        AddRoundKey(state, schedule, 14); // OHNE MixColumns
+
+        // State spaltenweise ausgeben
+        byte[] output = new byte[16];
+        for (int c = 0; c < 4; c++)
+        for (int r = 0; r < 4; r++)
+            output[4 * c + r] = state[r, c];
+
+        return output;
     }
 }
