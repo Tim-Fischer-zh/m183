@@ -1,0 +1,10 @@
+Datum,Thema,Umgebung,Stunden_geschätzt
+2026-06-05,Projektantrag + Design + Solution-Setup,Schule,4h
+2026-06-07,SHA-256 Padding,Freizeit,2h
+2026-06-12,SHA-256 Hilfsfunktionen + Konstanten,Schule,4h
+2026-06-18,SHA-256 Message Schedule + Kompression + Multi-Block,Freizeit,3h
+2026-06-19,HMAC-SHA256,Schule + Freizeit,3h
+2026-06-21,Interfaces aufräumen,Freizeit,1h
+2026-06-22,PBKDF2 Kern,Freizeit,6h
+2026-06-26,PBKDF2 Verify + Tests & AES start,Schule,4h
+2026-06-30,AES-256 komplett,Freizeit,4h
