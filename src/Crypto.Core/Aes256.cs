@@ -28,6 +28,101 @@ public class Aes256
 
     private static byte XTime(byte a)
     {
-        
+        //a = 1001_0000 = (7tes bit gesetzt (1 ...)) 
+        // 0x80 = 1000_0000 = auch 7 bit gesetzt = 128
+        /*
+         *  shift a um 1 nach links dann geht 7 bit weg, das muss man prüfen
+         */
+        int result = a << 1;
+        if ((a & 0x80) != 0)   //prüft, ob nach dem shift das bit weg ist 
+            result ^= 0x1b; 
+        return (byte)result; 
+    }
+
+    private static void SubBytes(byte[,] state)
+    {
+        /*
+         * Ersetzt jedes Byte des States durch seinen S-Box-Wert (Substitution)
+         */
+        // 2 Dimensional Array deswegen 2 For Schleifen
+        for (int i = 0; i < 4; i++)
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                state[i, j] = Sbox[state[i,j]];
+            }
+        }
+    }
+
+    private static void ShiftRows(byte[,] state)
+    {
+        /*
+         * Rotiert jede Zeile zyklisch nach links um ihre Zeilennummer (verteilt die Bytes über die Spalten)
+         */
+        for (int i = 1; i < 4; i++)
+        {
+            byte[] temp = new byte[4];
+            for (int j = 0; j < 4; j++)
+            {
+                temp[j] = state[i, j];
+            }
+            for (int j = 0; j < 4; j++)
+            {
+                state[i, j] = temp[(j + i) % 4];
+            }
+            
+        }
+    }
+
+    private static void AddRoundKey(byte[,] state, byte[][] schedule, int round)
+    {
+        /*
+         * Der Rundenschlüssel kommt aus der Schlüsselexpansion. Die liefert 60 Wörter zu 4 Byte (byte[][]).
+         * Pro Runde nutzt man vier Wörter, darum übergibt man den ganzen Schedule plus die Rundennummer
+         */
+
+        for (int c = 0; c < 4; c++)
+        {
+            for (int r = 0; r < 4; r++)
+            {
+                state[r, c ] ^= schedule[4 * round + c][r];
+            }
+        }
+    }
+
+    private static void MixColumns(byte[,] state)
+    {
+        /*
+         * Mischt jede Spalte im Galois-Feld GF(2^8) (verteilt jedes Byte über die ganze Spalte).
+         */
+        for (int c = 0; c < 4; c++)
+        {
+            /*
+             * a0          (1·a0)
+             * XTime(a1)   (2·a1)
+             * XTime(a2)^a2 (3·a2)
+             * a3          (1·a3)
+             */
+            /*
+             *  b0 = 2·a0 ^ 3·a1 ^   a2 ^   a3
+             *  b1 =   a0 ^ 2·a1 ^ 3·a2 ^   a3
+             *  b2 =   a0 ^   a1 ^ 2·a2 ^ 3·a3
+             *  b3 = 3·a0 ^   a1 ^   a2 ^ 2·a3
+             */
+            byte a0 = state[0,c], a1 = state[1, c], a2 = state[2, c],  a3 = state[3, c];
+            /*b0*/state[0, c] = (byte)(XTime(a0) ^ (XTime(a1) ^ a1) ^ a2 ^ a3);
+            /*b1*/state[1, c] = (byte)(a0 ^ XTime(a1) ^ (XTime(a2) ^ a2) ^ a3);
+            /*b2*/state[2, c] = (byte)(a0 ^ a1 ^ XTime(a2) ^ XTime(a3) ^ a3);
+            /*b3*/state[3, c] = (byte)((XTime(a0) ^ a0) ^ a1 ^ a2 ^ XTime(a3));
+        }
+    }
+
+    private static byte[][] KeyExpansion(byte[] key)
+    {
+        byte[][] w = new byte[60][];
+        for (int i = 0; i < 8; i++)
+        {
+            w[i] = new byte[] {key[4*i], key[4*i+1], key[4*i+2], key[4*i+3]};
+        }
     }
 }
