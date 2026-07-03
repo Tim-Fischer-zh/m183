@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using Crypto.Core;
-using Xunit;
 
 namespace Crypto.Tests;
 
@@ -12,11 +11,12 @@ public class AesTests
     [Fact]
     public void EncryptBlock_MatchesFips197()
     {
-        byte[] key = Convert.FromHexString("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
-        byte[] plaintext = Convert.FromHexString("00112233445566778899aabbccddeeff");
+        ReadOnlySpan<byte> key = Convert.FromHexString("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
+        ReadOnlySpan<byte> block = Convert.FromHexString("00112233445566778899aabbccddeeff");
         byte[] expected = Convert.FromHexString("8ea2b7ca516745bfeafc49904b496089");
 
-        byte[] actual = Aes256.EncryptBlock(plaintext, key);
+        var sut = new Aes256();
+        byte[] actual = sut.EncryptBlock(key, block);
 
         Assert.Equal(ToHex(expected), ToHex(actual));
     }
@@ -27,6 +27,7 @@ public class AesTests
     [Fact]
     public void EncryptBlock_MatchesDotNet_ForRandomInputs()
     {
+        var sut = new Aes256();
         var rng = new Random(7); // fester Seed -> reproduzierbar
         for (int i = 0; i < 100; i++)
         {
@@ -39,7 +40,7 @@ public class AesTests
             aes.Key = key; // 32 Byte -> AES-256
             byte[] expected = aes.EncryptEcb(block, PaddingMode.None);
 
-            byte[] actual = Aes256.EncryptBlock(block, key);
+            byte[] actual = sut.EncryptBlock(key, block);
 
             Assert.Equal(expected, actual);
         }

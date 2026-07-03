@@ -1,7 +1,9 @@
 namespace Crypto.Core;
 
-public class Aes256
+public class Aes256 : IBlockCipher
 {
+    public int BlockSizeInBytes => 16;
+
     // S-Box (FIPS 197), Substitutions-Tabelle für SubBytes. Verifizierte Normwerte.
     private static readonly byte[] Sbox =
     {
@@ -23,7 +25,7 @@ public class Aes256
         0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16,
     };
 
-    // Rundenkonstanten für die Schluesselexpansion: RC[1..7], jeweils das erste Byte des Rcon-Worts.
+    // Rundenkonstanten für die Schlüsselexpansion: RC[1..7], jeweils das erste Byte des Rcon-Worts.
     private static readonly byte[] Rcon = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40 };
 
     private static byte XTime(byte a)
@@ -57,7 +59,7 @@ public class Aes256
     private static void ShiftRows(byte[,] state)
     {
         /*
-         * Rotiert jede Zeile zyklisch nach links um ihre Zeilennummer (verteilt die Bytes über die Spalten)
+         * Rotiert jede Zeile nach links um ihre Zeilennummer (verteilt die Bytes über die Spalten)
          */
         for (int i = 1; i < 4; i++)
         {
@@ -126,7 +128,7 @@ public class Aes256
         return [w[1], w[2], w[3], w[0]];
     }
 
-    private static byte[][] KeyExpansion(byte[] key)
+    private static byte[][] KeyExpansion(ReadOnlySpan<byte> key)
     {
         byte[][] w = new byte[60][];
         for (int i = 0; i < 8; i++)
@@ -156,15 +158,16 @@ public class Aes256
         return w;
     }
     
-    public static byte[] EncryptBlock(byte[] input, byte[] key)
+    public byte[] EncryptBlock(ReadOnlySpan<byte> key, ReadOnlySpan<byte> block)
     {
+        
         byte[][] schedule = KeyExpansion(key);
 
         // State spaltenweise laden: state[zeile, spalte] = input[4*spalte + zeile]
         byte[,] state = new byte[4, 4];
         for (int c = 0; c < 4; c++)
         for (int r = 0; r < 4; r++)
-            state[r, c] = input[4 * c + r];
+            state[r, c] = block[4 * c + r];
 
         AddRoundKey(state, schedule, 0); // Runde 0
 
