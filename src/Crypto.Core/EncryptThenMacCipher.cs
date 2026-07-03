@@ -29,8 +29,8 @@ public class EncryptThenMacCipher : ISymmetricCipher
     {
         byte[] encKey = _mac.ComputeMac(key, "enc"u8);
         byte[] macKey = _mac.ComputeMac(key, "mac"u8);
-        int nonceLen = _cipher.NonceSizeInBytes;   // 12
-        int macLen   = _mac.MacSizeInBytes;         // 32
+        int nonceLen = _cipher.NonceSizeInBytes; // 12
+        int macLen   = _mac.MacSizeInBytes; // 32
         byte[] nonce = blob.Slice(0, nonceLen).ToArray();
         byte[] tag   = blob.Slice(blob.Length - macLen, macLen).ToArray();
         byte[] ct    = blob.Slice(nonceLen, blob.Length - nonceLen - macLen).ToArray();

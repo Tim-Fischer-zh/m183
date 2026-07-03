@@ -97,3 +97,21 @@ EncryptBlock setzt alles zusammen. State spaltenweise laden, AddRoundKey, dann 1
 Der FIPS-Testvektor stimmt, und der Quervergleich gegen die .NET-AES mit 100 Zufallsblöcken auch. AES ist durch.
 
 Als Nächstes ChaCha20, der zweite Verschlüsseler.
+
+## 3. Juli 2026
+
+Viel geschafft. ChaCha20 fertig, die Interfaces aufgeräumt und die authentifizierte Verschlüsselung dazu.
+
+ChaCha20 ist eine Stream-Chiffre, viel einfacher als AES. Nur Addition, Rotation und XOR auf 32-Bit-Wörtern, kein Galois-Feld. RotL ist mein RotR gespiegelt, die Quarter-Round eine kurze feste Sequenz. Wichtig war little-endian, genau umgekehrt zu SHA-256.
+
+Beim Testen kam ein falscher Keystream raus, obwohl der Round-Trip passte. Der Fehler war eindeutig: ich hatte die 20 Runden komplett vergessen. Ich habe den State geklont und sofort wieder dazu-addiert, ohne zu mischen. Das hat jedes Wort nur verdoppelt. Mit der Runden-Schleife dazwischen stimmt der RFC-Vektor.
+
+Dann die Interfaces. AES und ChaCha20 hatten noch keins. AES hat jetzt IBlockCipher, ChaCha20 hat IStreamCipher. Kein gemeinsames Interface, jedes passend zu seiner Art. AES musste ich von einer statischen Methode auf eine Instanzmethode umstellen, damit es per DI geht.
+
+Zum Schluss die authentifizierte Verschlüsselung, Encrypt-then-MAC. Keine neue Chiffre, sondern Komposition: erst mit ChaCha20 verschlüsseln, dann einen HMAC über das Ergebnis. Beim Entschlüsseln erst den MAC prüfen, dann entschlüsseln. Zwei getrennte Schlüssel, aus dem einen abgeleitet. Der Test kippt ein Byte im Blob, und das Entschlüsseln bricht ab. Das beweist, dass Manipulation erkannt wird.
+
+Damit ist die ganze Grundanforderung fertig. Alle fünf Primitiven plus die authentifizierte Verschlüsselung, alle gegen offizielle Vektoren geprüft.
+
+Am Schluss noch ein Menü im Lab gebaut, damit die Lehrperson jede Funktion mit eigenen Eingaben ausprobieren kann.
+
+Fürs KI-Log: das Lab-Menü und der ChaCha-Encrypt-Wrapper sind mit KI entstanden, die Krypto-Kerne sind alle von mir.
